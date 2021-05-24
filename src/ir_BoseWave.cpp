@@ -11,13 +11,10 @@
 //#define DEBUG // Activate this for lots of lovely debug output from this decoder.
 #include "IRremoteInt.h" // evaluates the DEBUG for DEBUG_PRINT
 
-/** \addtogroup Decoder Decoders and encoders for different protocols
- * @{
- */
 //==============================================================================
 //                           BBBB    OOO    SSSS  EEEEE
 //                           B   B  O   O  S      E
-//                           BB B   O   O   SSS   EEEE
+//                           BBBB   O   O    S    EEEE
 //                           B   B  O   O      S  E
 //                           BBBB    OOO   SSSS   EEEEE
 //==============================================================================
@@ -56,7 +53,7 @@ void IRsend::sendBoseWave(uint8_t aCommand, uint_fast8_t aNumberOfRepeats) {
         uint16_t tData = ((~aCommand) << 8) | aCommand;
 
         sendPulseDistanceWidthData(BOSEWAVE_BIT_MARK, BOSEWAVE_ONE_SPACE, BOSEWAVE_BIT_MARK, BOSEWAVE_ZERO_SPACE, tData,
-        BOSEWAVE_BITS, PROTOCOL_IS_LSB_FIRST, SEND_STOP_BIT);
+        BOSEWAVE_BITS, PROTOCOL_IS_MSB_FIRST, SEND_STOP_BIT);
 
         tNumberOfCommands--;
         // skip last delay!
@@ -91,7 +88,7 @@ bool IRrecv::decodeBoseWave() {
         return false;
     }
 
-    if (!decodePulseDistanceData(BOSEWAVE_BITS, 3, BOSEWAVE_BIT_MARK, BOSEWAVE_ONE_SPACE, BOSEWAVE_ZERO_SPACE, PROTOCOL_IS_LSB_FIRST)) {
+    if (!decodePulseDistanceData(BOSEWAVE_BITS, 3, BOSEWAVE_BIT_MARK, BOSEWAVE_ONE_SPACE, BOSEWAVE_ZERO_SPACE, PROTOCOL_IS_MSB_FIRST)) {
         DEBUG_PRINT("Bose: ");
         DEBUG_PRINTLN("Decode failed");
         return false;
@@ -112,13 +109,13 @@ bool IRrecv::decodeBoseWave() {
     // parity check for command. Use this variant to avoid compiler warning "comparison of promoted ~unsigned with unsigned [-Wsign-compare]"
     if ((tCommandNotInverted ^ tCommandInverted) != 0xFF) {
         DEBUG_PRINT("Bose: ");
-        DEBUG_PRINT("Command and inverted command check failed");
+        DEBUG_PRINTLN("Command and inverted command check failed");
         return false;
     }
 
     // check for repeat
     if (decodedIRData.rawDataPtr->rawbuf[0] < ((BOSEWAVE_REPEAT_SPACE + (BOSEWAVE_REPEAT_SPACE / 4)) / MICROS_PER_TICK)) {
-        decodedIRData.flags = IRDATA_FLAGS_IS_REPEAT | IRDATA_FLAGS_IS_LSB_FIRST;
+        decodedIRData.flags = IRDATA_FLAGS_IS_REPEAT | IRDATA_FLAGS_IS_MSB_FIRST;
     }
 
     decodedIRData.command = tCommandNotInverted;
@@ -127,5 +124,3 @@ bool IRrecv::decodeBoseWave() {
 
     return true;
 }
-
-/** @}*/
